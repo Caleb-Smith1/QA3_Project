@@ -115,5 +115,54 @@ def show_admin_panel():
     # Admin action buttons
     tk.Button(admin_window, text="Add New Question", command=lambda: add_question_form(admin_window)).pack(pady=5)
     tk.Button(admin_window, text="Delete Question", command=lambda: delete_question_form(admin_window)).pack(pady=5)
+    tk.Button(admin_window, text="Edit Question", command=lambda: edit_question_form(admin_window)).pack(pady=5)
 
     admin_window.mainloop()
+def edit_question_form(parent_window):
+    form = tk.Toplevel(parent_window)
+    form.title("Edit a Question")
+    form.geometry("500x600")
+
+    tk.Label(form, text="Select Course:").pack()
+    course_var = tk.StringVar()
+    course_var.set("database_admin")
+    tk.OptionMenu(form, course_var, "database_admin", "microeconomics", "business_mgmt", "statistics", "app_dev").pack()
+
+    tk.Label(form, text="Enter EXACT question text to edit:").pack()
+    old_question_entry = tk.Entry(form, width=60)
+    old_question_entry.pack()
+
+    tk.Label(form, text="New Question Text:").pack()
+    new_question_entry = tk.Entry(form, width=60)
+    new_question_entry.pack()
+
+    fields = {}
+    for label in ["Option A", "Option B", "Option C", "Option D", "Correct Answer"]:
+        tk.Label(form, text=label).pack()
+        entry = tk.Entry(form, width=60)
+        entry.pack()
+        fields[label] = entry
+
+    def submit():
+        old_text = old_question_entry.get().strip()
+        new_text = new_question_entry.get().strip()
+        values = [fields[label].get().strip() for label in fields]
+
+        if not old_text or not new_text or not all(values):
+            messagebox.showwarning("Incomplete", "Please fill out all fields.")
+            return
+
+        conn = connect_db()
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            UPDATE {course_var.get()}
+            SET question = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_answer = ?
+            WHERE question = ?
+        """, (new_text, *values, old_text))
+        conn.commit()
+        conn.close()
+
+        messagebox.showinfo("Success", "Question updated!")
+        form.destroy()
+
+    tk.Button(form, text="Save Changes", command=submit).pack(pady=10)
