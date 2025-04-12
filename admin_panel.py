@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 import sqlite3
 
 def connect_db():
@@ -27,10 +28,77 @@ def fetch_all_questions():
     conn.close()
     return all_questions
 
+def add_question_form(parent_window):
+    form = tk.Toplevel(parent_window)
+    form.title("Add New Question")
+    form.geometry("500x500")
+
+    tk.Label(form, text="Course:").pack()
+    course_var = tk.StringVar(form)
+    course_var.set("database_admin")
+    tk.OptionMenu(form, course_var, "database_admin", "microeconomics", "business_mgmt", "statistics", "app_dev").pack()
+
+    fields = {}
+    for label in ["Question", "Option A", "Option B", "Option C", "Option D", "Correct Answer"]:
+        tk.Label(form, text=label).pack()
+        entry = tk.Entry(form, width=60)
+        entry.pack()
+        fields[label] = entry
+
+    def submit():
+        values = [fields[field].get().strip() for field in fields]
+        if not all(values) or course_var.get() == "":
+            messagebox.showwarning("Incomplete", "Please fill out all fields.")
+            return
+
+        conn = connect_db()
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            INSERT INTO {course_var.get()} (question, option_a, option_b, option_c, option_d, correct_answer)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, values)
+        conn.commit()
+        conn.close()
+        messagebox.showinfo("Success", "Question added!")
+        form.destroy()
+
+    tk.Button(form, text="Submit", command=submit).pack(pady=10)
+
+def delete_question_form(parent_window):
+    form = tk.Toplevel(parent_window)
+    form.title("Delete a Question")
+    form.geometry("500x200")
+
+    tk.Label(form, text="Select Course:").pack()
+    course_var = tk.StringVar()
+    course_var.set("database_admin")
+    tk.OptionMenu(form, course_var, "database_admin", "microeconomics", "business_mgmt", "statistics", "app_dev").pack()
+
+    tk.Label(form, text="Enter Exact Question Text to Delete:").pack()
+    question_entry = tk.Entry(form, width=60)
+    question_entry.pack()
+
+    def delete_question():
+        question_text = question_entry.get().strip()
+        if not question_text:
+            messagebox.showwarning("Missing Info", "Please enter the question text.")
+            return
+
+        conn = connect_db()
+        cursor = conn.cursor()
+        cursor.execute(f"DELETE FROM {course_var.get()} WHERE question = ?", (question_text,))
+        conn.commit()
+        conn.close()
+
+        messagebox.showinfo("Deleted", "Question deleted (if it existed).")
+        form.destroy()
+
+    tk.Button(form, text="Delete", command=delete_question).pack(pady=10)
+
 def show_admin_panel():
     admin_window = tk.Tk()
     admin_window.title("Admin Panel")
-    admin_window.geometry("600x400")
+    admin_window.geometry("600x500")
 
     tk.Label(admin_window, text="All Questions and Answers", font=("Helvetica", 14)).pack(pady=10)
 
@@ -43,5 +111,9 @@ def show_admin_panel():
         text_area.insert(tk.END, f"[{category}]\nQ: {question}\nA: {answer}\n\n")
 
     text_area.config(state=tk.DISABLED)
+
+    # Admin action buttons
+    tk.Button(admin_window, text="Add New Question", command=lambda: add_question_form(admin_window)).pack(pady=5)
+    tk.Button(admin_window, text="Delete Question", command=lambda: delete_question_form(admin_window)).pack(pady=5)
 
     admin_window.mainloop()
