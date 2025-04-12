@@ -67,7 +67,8 @@ def show_quiz(course_table):
     question_label.pack(pady=20)
 
     selected_option = tk.StringVar(quiz_window)
-    option_menu = tk.OptionMenu(quiz_window, selected_option, "")
+    selected_option.set("Select one")
+    option_menu = tk.OptionMenu(quiz_window, selected_option, "Select one")
     option_menu.pack()
 
     feedback_label = tk.Label(quiz_window, text="", font=("Helvetica", 10))
@@ -77,10 +78,11 @@ def show_quiz(course_table):
         q = questions[index[0]]
         question_label.config(text=f"Q{index[0]+1}: {q.question_text}")
 
-        selected_option.set("")  # Reset selection
+        selected_option.set("Select one")
 
         menu = option_menu["menu"]
         menu.delete(0, "end")
+        menu.add_command(label="Select one", command=tk._setit(selected_option, "Select one"))
         for opt in q.options:
             menu.add_command(label=opt, command=tk._setit(selected_option, opt))
 
@@ -88,7 +90,7 @@ def show_quiz(course_table):
         q = questions[index[0]]
         answer = selected_option.get()
 
-        if not answer:
+        if answer == "Select one":
             messagebox.showwarning("Wait", "Please select an answer before submitting.")
             return
 
