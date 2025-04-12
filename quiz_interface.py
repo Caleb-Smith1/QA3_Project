@@ -9,7 +9,11 @@ def connect_db():
 def fetch_questions(course_table):
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT question, option_a, option_b, option_c, option_d, correct_answer FROM {course_table} LIMIT 2")
+    cursor.execute(f"""
+        SELECT question, option_a, option_b, option_c, option_d, correct_answer
+        FROM {course_table}
+        LIMIT 2
+    """)
     rows = cursor.fetchall()
     conn.close()
 
@@ -45,6 +49,70 @@ def show_quiz_menu():
 
     menu_window.mainloop()
 
-# Placeholder to be replaced next step
 def show_quiz(course_table):
-    messagebox.showinfo("Quiz Start", f"Loading quiz for: {course_table}")
+    questions = fetch_questions(course_table)
+
+    if not questions:
+        messagebox.showerror("Error", f"No questions found for {course_table}")
+        return
+
+    score = [0]
+    index = [0]
+
+    quiz_window = tk.Tk()
+    quiz_window.title("Quiz Time")
+    quiz_window.geometry("500x300")
+
+    question_label = tk.Label(quiz_window, text="", wraplength=400, font=("Helvetica", 12))
+    question_label.pack(pady=20)
+
+    selected_option = tk.StringVar(quiz_window)
+    option_menu = tk.OptionMenu(quiz_window, selected_option, "")
+    option_menu.pack()
+
+    feedback_label = tk.Label(quiz_window, text="", font=("Helvetica", 10))
+    feedback_label.pack(pady=10)
+
+    def load_question():
+        q = questions[index[0]]
+        question_label.config(text=f"Q{index[0]+1}: {q.question_text}")
+
+        selected_option.set("")  # Reset selection
+
+        menu = option_menu["menu"]
+        menu.delete(0, "end")
+        for opt in q.options:
+            menu.add_command(label=opt, command=tk._setit(selected_option, opt))
+
+    def submit_answer():
+        q = questions[index[0]]
+        answer = selected_option.get()
+
+        if not answer:
+            messagebox.showwarning("Wait", "Please select an answer before submitting.")
+            return
+
+        if q.is_correct(answer):
+            feedback_label.config(text="✅ Correct!", fg="green")
+            score[0] += 1
+        else:
+            feedback_label.config(text=f"❌ Incorrect! Correct answer: {q.correct_answer}", fg="red")
+
+        index[0] += 1
+        if index[0] < len(questions):
+            quiz_window.after(1000, load_question)
+        else:
+            quiz_window.after(1500, lambda: show_score(score[0], len(questions)))
+
+    def show_score(correct, total):
+        quiz_window.destroy()
+        result_window = tk.Tk()
+        result_window.title("Quiz Result")
+        result_window.geometry("300x150")
+        tk.Label(result_window, text=f"You scored {correct} out of {total}!", font=("Helvetica", 14)).pack(pady=30)
+        tk.Button(result_window, text="Close", command=result_window.destroy).pack()
+
+    tk.Button(quiz_window, text="Submit Answer", command=submit_answer).pack(pady=20)
+
+    load_question()
+    quiz_window.mainloop()
