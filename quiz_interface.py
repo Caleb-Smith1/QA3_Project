@@ -12,7 +12,7 @@ def fetch_questions(course_table):
     cursor.execute(f"""
         SELECT question, option_a, option_b, option_c, option_d, correct_answer
         FROM {course_table}
-        LIMIT 10
+        ORDER BY RANDOM()
     """)
     rows = cursor.fetchall()
     conn.close()
@@ -24,6 +24,7 @@ def fetch_questions(course_table):
         correct_answer = row[5]
         questions.append(Question(question_text, options, correct_answer))
     return questions
+
 
 def show_quiz_menu():
     menu_window = tk.Tk()
