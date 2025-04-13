@@ -67,16 +67,24 @@ def add_question_form(parent_window):
 def delete_question_form(parent_window):
     form = tk.Toplevel(parent_window)
     form.title("Delete a Question")
-    form.geometry("500x200")
+    form.geometry("500x250")
 
+    # Label for course selection
     tk.Label(form, text="Select Course:").pack()
-    course_var = tk.StringVar()
-    course_var.set("database_admin")
-    tk.OptionMenu(form, course_var, "database_admin", "microeconomics", "business_mgmt", "statistics", "app_dev").pack()
 
+    # Define dropdown options and default value
+    course_var = tk.StringVar(form)
+    course_options = ["database_admin", "microeconomics", "business_mgmt", "statistics", "app_dev"]
+    course_var.set(course_options[0])  # set default
+
+    # Create dropdown
+    course_menu = tk.OptionMenu(form, course_var, *course_options)
+    course_menu.pack()
+
+    # Question entry
     tk.Label(form, text="Enter Exact Question Text to Delete:").pack()
     question_entry = tk.Entry(form, width=60)
-    question_entry.pack()
+    question_entry.pack(pady=5)
 
     def delete_question():
         question_text = question_entry.get().strip()
@@ -88,12 +96,19 @@ def delete_question_form(parent_window):
         cursor = conn.cursor()
         cursor.execute(f"DELETE FROM {course_var.get()} WHERE question = ?", (question_text,))
         conn.commit()
+        deleted = cursor.rowcount
         conn.close()
 
-        messagebox.showinfo("Deleted", "Question deleted (if it existed).")
+        if deleted > 0:
+            messagebox.showinfo("Success", f"Deleted {deleted} question(s).")
+        else:
+            messagebox.showwarning("Not Found", "No matching question found.")
         form.destroy()
 
+    # Delete button
     tk.Button(form, text="Delete", command=delete_question).pack(pady=10)
+
+
 
 def show_admin_panel():
     admin_window = tk.Tk()

@@ -12,7 +12,7 @@ def fetch_questions(course_table):
     cursor.execute(f"""
         SELECT question, option_a, option_b, option_c, option_d, correct_answer
         FROM {course_table}
-        LIMIT 2
+        LIMIT 10
     """)
     rows = cursor.fetchall()
     conn.close()
