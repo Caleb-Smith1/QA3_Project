@@ -161,10 +161,14 @@ def edit_question_form(parent_window):
     def submit():
         old_text = old_question_entry.get().strip()
         new_text = new_question_entry.get().strip()
-        values = [fields[label].get().strip() for label in fields]
+        option_a = fields["Option A"].get().strip()
+        option_b = fields["Option B"].get().strip()
+        option_c = fields["Option C"].get().strip()
+        option_d = fields["Option D"].get().strip()
+        correct_answer = fields["Correct Answer"].get().strip()
 
-        if not old_text or not new_text or not all(values):
-            messagebox.showwarning("Incomplete", "Please fill out all fields.")
+        if not old_text or not new_text or not option_a or not option_b or not correct_answer:
+            messagebox.showwarning("Incomplete", "Please fill out at least Option A, Option B, and Correct Answer.")
             return
 
         conn = connect_db()
@@ -173,7 +177,15 @@ def edit_question_form(parent_window):
             UPDATE {course_var.get()}
             SET question = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_answer = ?
             WHERE question = ?
-        """, (new_text, *values, old_text))
+        """, (
+            new_text,
+            option_a,
+            option_b,
+            option_c if option_c else None,
+            option_d if option_d else None,
+            correct_answer,
+            old_text
+        ))
         conn.commit()
         conn.close()
 
